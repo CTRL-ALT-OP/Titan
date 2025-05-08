@@ -1,4 +1,5 @@
 import tkinter as d3
+import time
 
 
 class StopwatchApp:
@@ -12,6 +13,9 @@ class StopwatchApp:
         self.minutes = 0
         self.seconds = 0
         self.hundredths = 0
+        self.start_time = 0
+        self.elapsed_time = 0
+        self.paused_time = 0
 
         # Fonts
         self.font_for_clock = ("Alien Encounters", 60, "bold")
@@ -19,29 +23,43 @@ class StopwatchApp:
         self.font_for_other2 = ("Alien Encounters", 12, "bold")
 
     def reset(self):
-        self.seconds = 0
+        # Save the current running state
+        was_running = self.running
+
+        # Reset time values
+        self.start_time = time.time()
+        self.elapsed_time = 0
+        self.paused_time = 0
         self.minutes = 0
+        self.seconds = 0
         self.hundredths = 0
+
+        # Update display
         time_string = "00:00"
         self.time_lbl.configure(text=time_string)
+        hundredths_string = ".00"
+        self.hundredths_lbl.configure(text=hundredths_string)
+
+        # If it was running, keep it running with the new start time
+        if was_running:
+            self.update()
 
     def start_stop(self):
         self.running = not self.running
         if self.running:
             self.start.configure(text="Stop")
+            self.start_time = time.time() - self.paused_time
             self.update()
         else:
             self.start.configure(text="Start")
+            self.paused_time = time.time() - self.start_time
 
-    def update(self):
-        if self.running:
-            self.hundredths += 1
-            if self.hundredths >= 100:
-                self.hundredths = 0
-                self.seconds += 1
-            if self.seconds >= 60:
-                self.seconds = 0
-                self.minutes += 1
+    def update_time(self):
+        if self.page.page_frame.winfo_exists():
+            total_seconds = int(self.elapsed_time)
+            self.minutes = total_seconds // 60
+            self.seconds = total_seconds % 60
+            self.hundredths = int((self.elapsed_time - total_seconds) * 100)
 
             middle = ":"
             if self.seconds < 10:
@@ -69,10 +87,14 @@ class StopwatchApp:
             self.time_lbl.configure(text=time_string)
             self.hundredths_lbl.configure(text=hundredths_string)
 
+    def update(self):
         if self.running:
+            self.elapsed_time = time.time() - self.start_time
+            self.update_time()
             self.root.after(10, self.update)
 
     def create_widgets(self, page):
+        self.page = page
         page.page_frame.configure(bg="black")
 
         with open("apps/_clock/settings.txt", "r") as f:
@@ -89,7 +111,6 @@ class StopwatchApp:
             relx=0.033, rely=0.27, relwidth=0.75, relheight=0.4, anchor="nw"
         )
         self.time_lbl.configure(font=self.font_for_clock)
-
         self.hundredths_lbl = d3.Label(
             page.page_frame,
             text=hundredths_string,
@@ -101,9 +122,10 @@ class StopwatchApp:
         self.hundredths_lbl.place(relx=0.78, rely=0.424, width=45, relheight=0.2)
         self.hundredths_lbl.configure(font=self.font_for_other)
 
+        self.update_time()
         self.start = d3.Button(
             page.page_frame,
-            text="Start",
+            text="Start" if not self.running else "Stop",
             fg="lime green",
             bg="black",
             command=self.start_stop,
@@ -126,11 +148,7 @@ class StopwatchApp:
         )
 
     def destroy_app(self, page):
-        self.running = False
         page.page_frame.destroy()
-        with open("apps/_clock/settings.txt", "w") as f:
-            self.root.update_idletasks()
-            f.write(str(self.time_format))
 
 
 # Module-level instance to maintain state
@@ -139,7 +157,8 @@ _stopwatch_instance = None
 
 def create(page, root_):
     global _stopwatch_instance
-    _stopwatch_instance = StopwatchApp()
+    if _stopwatch_instance is None:
+        _stopwatch_instance = StopwatchApp()
     _stopwatch_instance.root = root_
     _stopwatch_instance.create_widgets(page)
 
@@ -148,4 +167,3 @@ def destroy(page, root):
     global _stopwatch_instance
     if _stopwatch_instance:
         _stopwatch_instance.destroy_app(page)
-        _stopwatch_instance = None
