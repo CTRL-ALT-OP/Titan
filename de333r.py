@@ -1,35 +1,67 @@
 import tkinter as d3
+from config import config
 
 
 class main:
     @staticmethod
     def create():
+        """Create the main window and its components."""
         root = d3.Tk()
         root.resizable(False, False)
-        fg_root = d3.Frame(root, width=350, height=300)
-        fg_root.pack()
-        bg_root = d3.Frame(root, width=300, height=300)
-        bg_root.place(x=25, y=0)
 
+        window_config = config["window"]
+
+        # Create foreground frame
+        fg_root = d3.Frame(
+            root, width=window_config.WINDOW_WIDTH, height=window_config.WINDOW_HEIGHT
+        )
+        fg_root.pack()
+
+        # Create background frame
+        bg_root = d3.Frame(
+            root, width=window_config.FRAME_WIDTH, height=window_config.FRAME_HEIGHT
+        )
+        bg_root.place(x=window_config.FRAME_X_OFFSET, y=window_config.FRAME_Y_OFFSET)
+
+        # Create navigation buttons
         switch_btn_l = d3.Button(root, text="<")
-        switch_btn_l.place(x=0, y=0, width=25, relheight=1)
+        switch_btn_l.place(x=0, y=0, width=window_config.BUTTON_WIDTH, relheight=1)
 
         switch_btn_r = d3.Button(root, text=">")
-        switch_btn_r.place(relx=1, y=0, width=25, relheight=1, anchor="ne")
+        switch_btn_r.place(
+            relx=1, y=0, width=window_config.BUTTON_WIDTH, relheight=1, anchor="ne"
+        )
 
         return root, bg_root, switch_btn_l, switch_btn_r
 
 
 class page:
     def create(self):
-        self.page_frame = d3.Frame(self.root, width=300, height=300)
+        """Create a page frame."""
+        window_config = config["window"]
+        self.page_frame = d3.Frame(
+            self.root,
+            width=window_config.FRAME_WIDTH,
+            height=window_config.FRAME_HEIGHT,
+        )
 
-    def tween(self, frame_2, bounding_x, time=50, direction=1):
+    def tween(self, frame_2, time, direction=1):
+        """Animate transition between pages.
+
+        Args:
+            frame_2: The page to transition to
+            time (int): Total duration of the animation in milliseconds
+            direction (int): 1 for forward, -1 for backward
+        """
+        anim_config = config["animation"]
+        window_config = config["window"]
+
         self.finished = False
+        bounding_x = window_config.FRAME_WIDTH
         frame_2.page_frame.place(x=0 + (direction * bounding_x), y=0)
 
         def looper(self):
-            self.curr_x -= 15
+            self.curr_x -= anim_config.TWEEN_STEP_SIZE
             frame_2.page_frame.place(x=direction * self.curr_x, y=0)
             self.page_frame.place(x=direction * (self.curr_x - self.bounding_x), y=0)
             if self.curr_x > 0:

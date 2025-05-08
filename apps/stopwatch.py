@@ -1,5 +1,6 @@
 import tkinter as d3
 import time
+from config import config
 
 
 class StopwatchApp:
@@ -17,10 +18,22 @@ class StopwatchApp:
         self.elapsed_time = 0
         self.paused_time = 0
 
-        # Fonts
-        self.font_for_clock = ("Alien Encounters", 60, "bold")
-        self.font_for_other = ("Alien Encounters", 20, "bold")
-        self.font_for_other2 = ("Alien Encounters", 12, "bold")
+        # Fonts using config
+        self.font_for_clock = (
+            config["ui"].FONT_FAMILY,
+            config["clock"].CLOCK_MAIN_FONT_SIZE,
+            "bold",
+        )
+        self.font_for_other = (
+            config["ui"].FONT_FAMILY,
+            config["clock"].CLOCK_SECONDARY_FONT_SIZE,
+            "bold",
+        )
+        self.font_for_other2 = (
+            config["ui"].FONT_FAMILY,
+            config["clock"].CLOCK_TERTIARY_FONT_SIZE,
+            "bold",
+        )
 
     def reset(self):
         # Save the current running state
@@ -95,7 +108,7 @@ class StopwatchApp:
 
     def create_widgets(self, page):
         self.page = page
-        page.page_frame.configure(bg="black")
+        page.page_frame.configure(bg=config["ui"].BACKGROUND_COLOR)
 
         with open("apps/_clock/settings.txt", "r") as f:
             settings = f.readlines()
@@ -105,7 +118,11 @@ class StopwatchApp:
         hundredths_string = ".00"
 
         self.time_lbl = d3.Label(
-            page.page_frame, text=time_string, fg="lime green", bg="black", anchor="e"
+            page.page_frame,
+            text=time_string,
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
+            anchor="e",
         )
         self.time_lbl.place(
             relx=0.033, rely=0.27, relwidth=0.75, relheight=0.4, anchor="nw"
@@ -114,8 +131,8 @@ class StopwatchApp:
         self.hundredths_lbl = d3.Label(
             page.page_frame,
             text=hundredths_string,
-            fg="lime green",
-            bg="black",
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
             justify="left",
             anchor="w",
         )
@@ -126,8 +143,8 @@ class StopwatchApp:
         self.start = d3.Button(
             page.page_frame,
             text="Start" if not self.running else "Stop",
-            fg="lime green",
-            bg="black",
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
             command=self.start_stop,
         )
         self.start.configure(font=self.font_for_other)
@@ -138,8 +155,8 @@ class StopwatchApp:
         self.rst = d3.Button(
             page.page_frame,
             text="Reset",
-            fg="lime green",
-            bg="black",
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
             command=self.reset,
         )
         self.rst.configure(font=self.font_for_other)

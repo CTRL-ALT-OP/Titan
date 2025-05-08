@@ -1,16 +1,18 @@
 import tkinter as d3
+from config import config
 
 
 class TicTacToe:
     def __init__(self):
         self.turn = "r"
+        self.ui_config = config["ui"]
+        self.window_config = config["window"]
 
     def create_board(self, _width):
         self.width = _width
         a = 0
         b = 0
         self.grid = []
-
         self.grid_pieces = []
 
         while a < self.width:
@@ -19,15 +21,20 @@ class TicTacToe:
             while b < self.width:
                 label = d3.Button(
                     self.page.page_frame,
-                    bg="black",
-                    activebackground="dark grey",
+                    bg=self.ui_config.BACKGROUND_COLOR,
+                    activebackground=self.ui_config.ACTIVE_BACKGROUND_COLOR,
                     text="  ",
                     command=lambda _row=a, _column=b: self.object_pressed(
                         _row, _column
                     ),
-                    font=("Alien Encounters", 60, "bold"),
+                    font=(self.ui_config.FONT_FAMILY, 60, "bold"),
                 )
-                label.place(x=b * 100, y=a * 100, height=100, width=100)
+                label.place(
+                    x=b * self.window_config.FRAME_WIDTH / self.width,
+                    y=a * self.window_config.FRAME_HEIGHT / self.width,
+                    height=self.window_config.FRAME_HEIGHT / self.width,
+                    width=self.window_config.FRAME_WIDTH / self.width,
+                )
                 row.append(label)
                 row_pieces.append("")
                 b += 1
@@ -44,19 +51,20 @@ class TicTacToe:
                 and self.grid_pieces[_row][_column] != "B"
             ):
                 self.turn = "b"
-                self.grid[_row][_column].configure(text="X", fg="red")
+                self.grid[_row][_column].configure(
+                    text="X", fg=self.ui_config.SECONDARY_COLOR
+                )
                 self.grid_pieces[_row][_column] = "R"
-                # print(grid_pieces)
                 win_r = self.verify_board("R")
                 if win_r:
                     print("Red won the game!")
                     btn = d3.Label(
                         self.page.page_frame,
                         text="Red won!\nDo you want to play again?",
-                        fg="lime green",
-                        font=("Alien Encounters", 14, "bold"),
+                        fg=self.ui_config.PRIMARY_COLOR,
+                        font=(self.ui_config.FONT_FAMILY, 14, "bold"),
                         relief="groove",
-                        bg="black",
+                        bg=self.ui_config.BACKGROUND_COLOR,
                     )
                     btn.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -72,11 +80,11 @@ class TicTacToe:
                     btn_2 = d3.Button(
                         self.page.page_frame,
                         text="Yes",
-                        font=("Alien Encounters", 30, "bold"),
-                        fg="lime green",
+                        font=(self.ui_config.FONT_FAMILY, 30, "bold"),
+                        fg=self.ui_config.PRIMARY_COLOR,
                         relief="groove",
-                        bg="black",
-                        activebackground="dark grey",
+                        bg=self.ui_config.BACKGROUND_COLOR,
+                        activebackground=self.ui_config.ACTIVE_BACKGROUND_COLOR,
                     )
                     btn_2.configure(command=lambda bt1=btn, bt2=btn_2: do(bt1, bt2))
                     btn_2.place(relx=0.5, rely=0.65, anchor="center")
@@ -89,17 +97,16 @@ class TicTacToe:
                 self.turn = "r"
                 self.grid[_row][_column].configure(text="O", fg="blue")
                 self.grid_pieces[_row][_column] = "B"
-                # print(grid_pieces)
                 win_r = self.verify_board("B")
                 if win_r:
                     print("Blue won the game!")
                     btn = d3.Label(
                         self.page.page_frame,
                         text="Blue won!\nDo you want to play again?",
-                        fg="lime green",
-                        font=("Alien Encounters", 14, "bold"),
+                        fg=self.ui_config.PRIMARY_COLOR,
+                        font=(self.ui_config.FONT_FAMILY, 14, "bold"),
                         relief="groove",
-                        bg="black",
+                        bg=self.ui_config.BACKGROUND_COLOR,
                     )
                     btn.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -115,11 +122,11 @@ class TicTacToe:
                     btn_2 = d3.Button(
                         self.page.page_frame,
                         text="Yes",
-                        font=("Alien Encounters", 30, "bold"),
-                        fg="lime green",
+                        font=(self.ui_config.FONT_FAMILY, 30, "bold"),
+                        fg=self.ui_config.PRIMARY_COLOR,
                         relief="groove",
-                        bg="black",
-                        activebackground="dark grey",
+                        bg=self.ui_config.BACKGROUND_COLOR,
+                        activebackground=self.ui_config.ACTIVE_BACKGROUND_COLOR,
                     )
                     btn_2.configure(command=lambda bt1=btn, bt2=btn_2: do(bt1, bt2))
                     btn_2.place(relx=0.5, rely=0.65, anchor="center")
