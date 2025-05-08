@@ -1,24 +1,31 @@
 from tkinter import *
 
-root = Tk()
 
-root.wm_attributes("-topmost","1")
+class Timer:
+    def __init__(self, root):
+        self.root = root
+        self.root.wm_attributes("-topmost", "1")
 
-canvas = Canvas(root,width=100,height=100).pack()
+        self.canvas = Canvas(self.root, width=100, height=100)
+        self.canvas.pack()
 
-global time
-time = 3600
+        self.time = 3600
 
-global timer_str
-timer_str = Label(root, text = str(time),font=("Helvetica", 20))
-timer_str.pack()
+        self.timer_str = Label(self.root, text=str(self.time), font=("Helvetica", 20))
+        self.timer_str.pack()
 
-def timer():
-    global time
-    global timer_str
-    time -= 1
-    timer_str.configure(text = str(time))
-    root.after(1000,timer)
+        self.start_timer()
 
-timer()
-root.mainloop()
+    def start_timer(self):
+        self.timer()
+
+    def timer(self):
+        self.time -= 1
+        self.timer_str.configure(text=str(self.time))
+        self.root.after(1000, self.timer)
+
+
+if __name__ == "__main__":
+    root = Tk()
+    app = Timer(root)
+    root.mainloop()
