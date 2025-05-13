@@ -5,3 +5,4 @@
 /venv
 /titan.zip
 /.trunk
+/tests/__pycache__
