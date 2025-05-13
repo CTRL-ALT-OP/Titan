@@ -6,3 +6,5 @@
 /titan.zip
 /.trunk
 /tests/__pycache__
+/.coverage
+/coverage_re
