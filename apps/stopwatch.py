@@ -68,37 +68,28 @@ class StopwatchApp:
             self.paused_time = time.time() - self.start_time
 
     def update_time(self):
-        if self.page.page_frame.winfo_exists():
-            total_seconds = int(self.elapsed_time)
-            self.minutes = total_seconds // 60
-            self.seconds = total_seconds % 60
-            self.hundredths = int((self.elapsed_time - total_seconds) * 100)
+        if not self.page.page_frame.winfo_exists():
+            return
+        total_seconds = int(self.elapsed_time)
+        self.minutes, self.seconds = divmod(total_seconds, 60)
+        self.hundredths = int((self.elapsed_time - total_seconds) * 100)
 
-            middle = ":"
-            if self.seconds < 10:
-                middle = ":0"
+        middle = ":0" if self.seconds < 10 else ":"
+        if self.minutes < 10:
+            minut = "00" if self.minutes == 0 else f"0{str(self.minutes)}"
+        else:
+            minut = str(self.minutes)
 
-            if self.minutes < 10:
-                if self.minutes == 0:
-                    minut = "00"
-                else:
-                    minut = "0" + str(self.minutes)
-            else:
-                minut = str(self.minutes)
+        if self.hundredths < 10:
+            hundredt = "00" if self.hundredths == 0 else f"0{self.hundredths}"
+        else:
+            hundredt = str(self.hundredths)
 
-            if self.hundredths < 10:
-                if self.hundredths == 0:
-                    hundredt = "00"
-                else:
-                    hundredt = "0" + str(self.hundredths)
-            else:
-                hundredt = str(self.hundredths)
+        time_string = str(minut) + middle + str(self.seconds)
+        hundredths_string = f".{str(hundredt)}"
 
-            time_string = str(minut) + middle + str(self.seconds)
-            hundredths_string = "." + str(hundredt)
-
-            self.time_lbl.configure(text=time_string)
-            self.hundredths_lbl.configure(text=hundredths_string)
+        self.time_lbl.configure(text=time_string)
+        self.hundredths_lbl.configure(text=hundredths_string)
 
     def update(self):
         if self.running:
@@ -142,7 +133,7 @@ class StopwatchApp:
         self.update_time()
         self.start = d3.Button(
             page.page_frame,
-            text="Start" if not self.running else "Stop",
+            text="Stop" if self.running else "Start",
             fg=config["ui"].PRIMARY_COLOR,
             bg=config["ui"].BACKGROUND_COLOR,
             command=self.start_stop,

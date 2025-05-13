@@ -46,10 +46,7 @@ class TicTacToe:
 
     def object_pressed(self, _row, _column):
         if self.turn == "r":
-            if (
-                self.grid_pieces[_row][_column] != "R"
-                and self.grid_pieces[_row][_column] != "B"
-            ):
+            if self.grid_pieces[_row][_column] not in ["R", "B"]:
                 self.turn = "b"
                 self.grid[_row][_column].configure(
                     text="X", fg=self.ui_config.SECONDARY_COLOR
@@ -90,10 +87,7 @@ class TicTacToe:
                     btn_2.place(relx=0.5, rely=0.65, anchor="center")
 
         elif self.turn == "b":
-            if (
-                self.grid_pieces[_row][_column] != "R"
-                and self.grid_pieces[_row][_column] != "B"
-            ):
+            if self.grid_pieces[_row][_column] not in ["R", "B"]:
                 self.turn = "r"
                 self.grid[_row][_column].configure(text="O", fg="blue")
                 self.grid_pieces[_row][_column] = "B"
@@ -146,15 +140,14 @@ class TicTacToe:
                                 column_num + column_change
                             ]
                             == player
+                        ) and (
+                            self.grid_pieces[row_num + (2 * row_change)][
+                                column_num + (2 * column_change)
+                            ]
+                            == player
                         ):
-                            if (
-                                self.grid_pieces[row_num + (2 * row_change)][
-                                    column_num + (2 * column_change)
-                                ]
-                                == player
-                            ):
-                                print("line found starting at " + str(current_coords))
-                                return True
+                            print(f"line found starting at {current_coords}")
+                            return True
 
                     win = False
 
@@ -179,11 +172,7 @@ class TicTacToe:
                     ):
                         win = check_line(1, 1)
 
-                    if win:
-                        return True
-                    else:
-                        return False
-
+                    return bool(win)
                 column_num += 1
             column_num = 0
             row_num += 1

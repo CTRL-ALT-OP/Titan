@@ -300,7 +300,6 @@ class BlockoidApp:
             filler_y = box_above + self.BLOCK_SIZE
             self.filler_frames.append([])
             while filler_y < config["window"].FRAME_HEIGHT:
-                int_o = 0
                 curr_frame = d3.Label(
                     self.page.page_frame, bg=config["ui"].BACKGROUND_COLOR
                 )
@@ -312,7 +311,7 @@ class BlockoidApp:
                     y=filler_y,
                 )
                 filler_y += self.BLOCK_SIZE
-                int_o += 1
+                int_o = 0 + 1
                 self.page.page_frame.update()
 
             filler_x += self.BLOCK_SIZE
