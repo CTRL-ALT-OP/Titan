@@ -27,7 +27,7 @@ ENV/
 
 # Coverage
 .coverage
-coverage_re
+coverage_re/
 htmlcov/
 
 # Testing
