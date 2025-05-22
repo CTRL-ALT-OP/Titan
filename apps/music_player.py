@@ -9,6 +9,9 @@ SONG_END_CHECK_INTERVAL_MS = 1000
 PROGRESS_UPDATE_INTERVAL_MS = 250
 TIME_DISPLAY_FORMAT = "{current_min}:{current_sec:02d} / {total_min}:{total_sec:02d}"
 
+# Module-level instance
+_music_player_instance = None
+
 
 class PlaybackState:
     """Class to manage playback state and timing logic"""
@@ -817,18 +820,12 @@ class MusicPlayer:
         page.page_frame.destroy()
 
 
-# Module-level instance
-_music_player_instance = None
-
-
 def create(page, root):
-    """Create or reuse the music player instance"""
     global _music_player_instance
-    if _music_player_instance is None:
+    if not _music_player_instance:
         _music_player_instance = MusicPlayer()
-
-    _music_player_instance.root = root
     _music_player_instance.page = page
+    _music_player_instance.root = root
     _music_player_instance.create_widgets(page)
 
 
@@ -898,3 +895,15 @@ def destroy(page, root):
             if _music_player_instance.song_end_check_id and root:
                 root.after_cancel(_music_player_instance.song_end_check_id)
             _music_player_instance.song_end_check_id = None
+
+
+def is_running():
+    """Check if the music player is currently playing music.
+
+    Returns:
+        bool: True if music is playing, False otherwise
+    """
+    global _music_player_instance
+    if _music_player_instance:
+        return _music_player_instance.state.is_playing
+    return False

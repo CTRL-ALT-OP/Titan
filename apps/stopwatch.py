@@ -175,3 +175,15 @@ def destroy(page, root):
     global _stopwatch_instance
     if _stopwatch_instance:
         _stopwatch_instance.destroy_app(page)
+
+
+def is_running():
+    """Check if the stopwatch is currently running.
+
+    Returns:
+        bool: True if stopwatch is running, False otherwise
+    """
+    global _stopwatch_instance
+    if _stopwatch_instance:
+        return _stopwatch_instance.running
+    return False

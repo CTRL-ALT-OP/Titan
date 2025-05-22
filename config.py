@@ -11,10 +11,11 @@ class WindowConfig:
     WINDOW_WIDTH = 350
     WINDOW_HEIGHT = 300
     FRAME_WIDTH = 300
-    FRAME_HEIGHT = 300
+    FRAME_HEIGHT = 250  # Reduced to account for bottom nav
     FRAME_X_OFFSET = 25
     FRAME_Y_OFFSET = 0
     BUTTON_WIDTH = 25
+    BOTTOM_NAV_HEIGHT = 50
 
 
 class AnimationConfig:
@@ -29,7 +30,10 @@ class AppConfig:
     """Application-specific configuration."""
 
     APPS_DIRECTORY = "apps"
-    APPS_PRIORITY_ORDER = ["clock", "stopwatch"]  # Apps that should appear first
+    APPS_PRIORITY_ORDER = [
+        "clock",
+        "stopwatch",
+    ]  # Apps that should appear first
     RESTRICTED_FILES = ["__init__.py", "__pycache__"]
 
 

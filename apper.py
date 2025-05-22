@@ -47,3 +47,17 @@ class app:
 def list():
     """Return list of available apps."""
     return _app_list
+
+
+def get_app_module(app_name):
+    """Get the module for a specific app.
+
+    Args:
+        app_name (str): Name of the app
+
+    Returns:
+        module: The app module or None if not found
+    """
+    if app_name in _app_list:
+        return _app_modules[_app_list.index(app_name)]
+    return None

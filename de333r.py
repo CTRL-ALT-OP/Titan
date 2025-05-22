@@ -24,15 +24,75 @@ class main:
         bg_root.place(x=window_config.FRAME_X_OFFSET, y=window_config.FRAME_Y_OFFSET)
 
         # Create navigation buttons
-        switch_btn_l = d3.Button(root, text="<")
-        switch_btn_l.place(x=0, y=0, width=window_config.BUTTON_WIDTH, relheight=1)
-
-        switch_btn_r = d3.Button(root, text=">")
-        switch_btn_r.place(
-            relx=1, y=0, width=window_config.BUTTON_WIDTH, relheight=1, anchor="ne"
+        switch_btn_l = d3.Button(
+            root,
+            text="<",
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
+            font=(config["ui"].FONT_FAMILY, config["ui"].BUTTON_FONT_SIZE),
+        )
+        switch_btn_l.place(
+            x=0,
+            y=0,
+            width=window_config.BUTTON_WIDTH,
+            height=window_config.WINDOW_HEIGHT,
         )
 
-        return root, bg_root, switch_btn_l, switch_btn_r
+        switch_btn_r = d3.Button(
+            root,
+            text=">",
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
+            font=(config["ui"].FONT_FAMILY, config["ui"].BUTTON_FONT_SIZE),
+        )
+        switch_btn_r.place(
+            relx=1,
+            y=0,
+            width=window_config.BUTTON_WIDTH,
+            height=window_config.WINDOW_HEIGHT,
+            anchor="ne",
+        )
+
+        # Create bottom navigation buttons
+        bottom_frame = d3.Frame(
+            root,
+            width=window_config.FRAME_WIDTH,
+            height=window_config.BOTTOM_NAV_HEIGHT,
+            bg=config["ui"].BACKGROUND_COLOR,
+        )
+        bottom_frame.place(
+            x=window_config.FRAME_X_OFFSET,
+            y=window_config.FRAME_HEIGHT + window_config.FRAME_Y_OFFSET,
+        )
+
+        back_btn = d3.Button(
+            bottom_frame,
+            text="←",
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
+            font=(config["ui"].FONT_FAMILY, config["ui"].BUTTON_FONT_SIZE),
+        )
+        back_btn.place(relx=0.2, rely=0.5, anchor="center", width=40, height=40)
+
+        home_btn = d3.Button(
+            bottom_frame,
+            text="⌂",
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
+            font=(config["ui"].FONT_FAMILY, config["ui"].BUTTON_FONT_SIZE),
+        )
+        home_btn.place(relx=0.5, rely=0.5, anchor="center", width=40, height=40)
+
+        apps_btn = d3.Button(
+            bottom_frame,
+            text="☰",
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
+            font=(config["ui"].FONT_FAMILY, config["ui"].BUTTON_FONT_SIZE),
+        )
+        apps_btn.place(relx=0.8, rely=0.5, anchor="center", width=40, height=40)
+
+        return root, bg_root, switch_btn_l, switch_btn_r, back_btn, home_btn, apps_btn
 
 
 class page:
@@ -82,3 +142,120 @@ class page:
         self.true_root = true_root
         self.finished = False
         self.create()
+
+
+class popup:
+    """Popup frame for displaying app lists or other information."""
+
+    def __init__(self, parent, title):
+        """Create a popup frame.
+
+        Args:
+            parent: Parent window
+            title: Title of the popup
+        """
+        window_config = config["window"]
+        ui_config = config["ui"]
+
+        # Set size and position
+        width = 200
+        height = 250
+
+        # Create an overlay frame that covers just the content area
+        self.overlay = d3.Frame(
+            parent,
+            width=window_config.FRAME_WIDTH,
+            height=window_config.FRAME_HEIGHT,
+            bg=config["ui"].BACKGROUND_COLOR,
+        )
+
+        # Place it over the content area
+        self.overlay.place(
+            x=window_config.FRAME_X_OFFSET, y=window_config.FRAME_Y_OFFSET
+        )
+
+        # Create the popup frame
+        self.content_frame = d3.Frame(
+            self.overlay,
+            width=width,
+            height=height,
+            bg=ui_config.BACKGROUND_COLOR,
+            highlightbackground=ui_config.PRIMARY_COLOR,
+            highlightthickness=2,
+        )
+
+        # Center the content frame
+        x = (window_config.FRAME_WIDTH - width) // 2
+        y = (window_config.FRAME_HEIGHT - height) // 2
+        self.content_frame.place(x=x, y=y)
+
+        # Title label at the top
+        self.title_label = d3.Label(
+            self.content_frame,
+            text=title,
+            font=(ui_config.FONT_FAMILY, 14),
+            fg=ui_config.PRIMARY_COLOR,
+            bg=ui_config.BACKGROUND_COLOR,
+        )
+        self.title_label.pack(pady=10)
+
+        # Close button
+        self.close_btn = d3.Button(
+            self.content_frame,
+            text="×",
+            fg=ui_config.SECONDARY_COLOR,
+            bg=ui_config.BACKGROUND_COLOR,
+            font=(ui_config.FONT_FAMILY, ui_config.BUTTON_FONT_SIZE),
+            borderwidth=0,
+            command=self.close,
+        )
+        self.close_btn.place(x=width - 30, y=5, width=25, height=25)
+
+        # Current y position for adding elements
+        self.current_y = 50
+
+    def close(self):
+        """Close the popup by destroying the overlay frame."""
+        self.overlay.destroy()
+
+    def add_button(self, text, command):
+        """Add a button to the popup.
+
+        Args:
+            text: Button text
+            command: Function to call when button is clicked
+        """
+
+        # Create a wrapper function to close the popup after executing command
+        def wrapped_command():
+            command()
+            self.close()
+
+        button = d3.Button(
+            self.content_frame,
+            text=text,
+            command=wrapped_command,
+            bg=config["ui"].PRIMARY_COLOR,
+            fg=config["ui"].BACKGROUND_COLOR,
+            font=(config["ui"].FONT_FAMILY, 12),
+        )
+        button.place(x=20, y=self.current_y, width=160, height=30)
+
+        self.current_y += 40
+
+    def add_label(self, text):
+        """Add a label to the popup.
+
+        Args:
+            text: Label text
+        """
+        label = d3.Label(
+            self.content_frame,
+            text=text,
+            font=(config["ui"].FONT_FAMILY, 12),
+            fg=config["ui"].PRIMARY_COLOR,
+            bg=config["ui"].BACKGROUND_COLOR,
+        )
+        label.place(x=20, y=self.current_y, width=160)
+
+        self.current_y += 30

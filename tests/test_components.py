@@ -1,5 +1,5 @@
 import importlib.util
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 
 
 import mock_tk
@@ -224,22 +224,30 @@ def test_main_create_window_geometry():
                     spec.loader.exec_module(config)
 
                     # Call create
-                    root, bg_root, switch_l, switch_r = de333r.main.create()
+                    root, bg_root, switch_l, switch_r, back_btn, home_btn, apps_btn = (
+                        de333r.main.create()
+                    )
 
                     # Verify window is not resizable
                     mock_tk_instance.resizable.assert_called_with(False, False)
 
                     # Verify frame dimensions
                     window_config = config.config["window"]
-                    mock_frame_class.assert_called_with(
-                        mock_tk_instance,
-                        width=window_config.FRAME_WIDTH,
-                        height=window_config.FRAME_HEIGHT,
+                    assert (
+                        call(
+                            mock_tk_instance,
+                            width=window_config.FRAME_WIDTH,
+                            height=window_config.FRAME_HEIGHT,
+                        )
+                        in mock_frame_class.call_args_list
                     )
 
                     # Verify button placement
                     switch_l.place.assert_called()
                     switch_r.place.assert_called()
+                    back_btn.place.assert_called()
+                    home_btn.place.assert_called()
+                    apps_btn.place.assert_called()
 
 
 def test_page_tween_looper():

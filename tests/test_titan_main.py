@@ -102,11 +102,17 @@ class TestTitanApp:
         mock_bg_root = MagicMock()
         mock_switch_l = MagicMock()
         mock_switch_r = MagicMock()
+        mock_back_btn = MagicMock()
+        mock_home_btn = MagicMock()
+        mock_apps_btn = MagicMock()
         mock_create.return_value = (
             mock_root,
             mock_bg_root,
             mock_switch_l,
             mock_switch_r,
+            mock_back_btn,
+            mock_home_btn,
+            mock_apps_btn,
         )
 
         # Mock page and app creation
@@ -143,6 +149,9 @@ class TestTitanApp:
         self.app.bg_root = MagicMock()
         self.app.switch_l = MagicMock()
         self.app.switch_r = MagicMock()
+        self.app.back_btn = MagicMock()
+        self.app.home_btn = MagicMock()
+        self.app.apps_btn = MagicMock()
 
         # Mock the necessary methods
         with patch.object(self.app, "_create_next_page_and_app") as mock_create:
@@ -169,6 +178,9 @@ class TestTitanApp:
         self.app.bg_root = MagicMock()
         self.app.switch_l = MagicMock()
         self.app.switch_r = MagicMock()
+        self.app.back_btn = MagicMock()
+        self.app.home_btn = MagicMock()
+        self.app.apps_btn = MagicMock()
 
         # Mock the necessary methods
         with patch.object(self.app, "_create_next_page_and_app") as mock_create:
@@ -279,6 +291,9 @@ class TestTitanApp:
         # Set up test case
         self.app.switch_l = MagicMock()
         self.app.switch_r = MagicMock()
+        self.app.back_btn = MagicMock()
+        self.app.home_btn = MagicMock()
+        self.app.apps_btn = MagicMock()
 
         # Call the method
         self.app._enable_switches()
@@ -286,6 +301,9 @@ class TestTitanApp:
         # Verify both switches were configured to normal state
         self.app.switch_l.configure.assert_called_once_with(state="normal")
         self.app.switch_r.configure.assert_called_once_with(state="normal")
+        self.app.back_btn.configure.assert_called_once_with(state="normal")
+        self.app.home_btn.configure.assert_called_once_with(state="normal")
+        self.app.apps_btn.configure.assert_called_once_with(state="normal")
 
     @patch("main.titan.page")
     @patch("apper.app")
@@ -370,11 +388,14 @@ class TestDe333rModule:
         components = de333r.main.create()
 
         # Verify components
-        assert len(components) == 4
+        assert len(components) == 7
         assert components[0] is not None  # root
         assert components[1] is not None  # bg_root
         assert components[2] is not None  # switch_btn_l
         assert components[3] is not None  # switch_btn_r
+        assert components[4] is not None  # back_btn
+        assert components[5] is not None  # home_btn
+        assert components[6] is not None  # apps_btn
 
     def test_page_initialization(self):
         """Test page class initialization."""
