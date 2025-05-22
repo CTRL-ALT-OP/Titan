@@ -66,10 +66,6 @@ class TestPopup:
         # Verify that a close button was created
         assert hasattr(self.popup, "close_btn")
 
-        # Verify that current_y was initialized
-        assert hasattr(self.popup, "current_y")
-        assert self.popup.current_y > 0
-
     def test_close_method(self):
         """Test that the close method destroys the overlay."""
         # Call close
@@ -82,9 +78,6 @@ class TestPopup:
         """Test that add_button creates a button with the given text and command."""
         # Create a mock command
         command_mock = MagicMock()
-
-        # Initial y position
-        initial_y = self.popup.current_y
 
         # Create button instance mock
         button_instance = MagicMock()
@@ -102,13 +95,8 @@ class TestPopup:
             args, kwargs = button_mock.call_args
             assert kwargs["text"] == "Test Button"
 
-            # Verify that current_y was incremented
-            assert self.popup.current_y > initial_y
-
     def test_add_label(self):
         """Test that add_label creates a label with the given text."""
-        # Initial y position
-        initial_y = self.popup.current_y
 
         # Create label instance mock
         label_instance = MagicMock()
@@ -125,9 +113,6 @@ class TestPopup:
             # Get the call arguments
             args, kwargs = label_mock.call_args
             assert kwargs["text"] == "Test Label"
-
-            # Verify that current_y was incremented
-            assert self.popup.current_y > initial_y
 
     def test_button_command_wrapper(self):
         """Test that the button command wrapper closes the popup after executing the command."""

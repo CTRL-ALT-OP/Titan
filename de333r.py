@@ -94,7 +94,12 @@ class popup:
             parent: Parent window
             title: Title of the popup
         """
-        pass
+        self.overlay = None
+        self.content_frame = None
+        self.title_label = None
+
+        # Close button
+        self.close_btn = None
 
     def close(self):
         """Empty shell method."""
