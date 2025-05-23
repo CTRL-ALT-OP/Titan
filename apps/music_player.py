@@ -2,7 +2,6 @@ import tkinter as d3
 import os
 import pygame
 import time
-from tkinter import messagebox
 from config import config
 
 # Define constants

@@ -40,6 +40,8 @@ class app:
 
     def __init__(self, page, code, root):
         self.code = code
+        if code not in _app_list:
+            raise ValueError(f"App '{code}' not found in available apps")
         self.app = _app_modules[_app_list.index(code)]
         self.app.create(page, root)
 
