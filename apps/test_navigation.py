@@ -21,24 +21,30 @@ def create(page, root):
 
     # Get UI configuration
     ui_config = config["ui"]
+    window_config = config["window"]
 
     # Create the main frame
-    main_frame = d3.Frame(page.page_frame, bg=ui_config.BACKGROUND_COLOR)
-    main_frame.pack(fill="both", expand=True)
+    main_frame = d3.Frame(
+        page.page_frame,
+        bg=ui_config.BACKGROUND_COLOR,
+        width=window_config.FRAME_WIDTH,
+        height=window_config.FRAME_HEIGHT,
+    )
+    main_frame.place(x=0, y=0, relwidth=1, relheight=1)
 
-    # Create a title
+    # Create a title with smaller font
     title_label = d3.Label(
         main_frame,
         text="Navigation Test App",
-        font=(ui_config.FONT_FAMILY, ui_config.TITLE_FONT_SIZE),
+        font=(ui_config.FONT_FAMILY, 14),  # Reduced from 18
         fg=ui_config.PRIMARY_COLOR,
         bg=ui_config.BACKGROUND_COLOR,
     )
-    title_label.pack(pady=20)
+    title_label.pack(pady=5)  # Reduced padding
 
     # Create navigation indicators
     nav_frame = d3.Frame(main_frame, bg=ui_config.BACKGROUND_COLOR)
-    nav_frame.pack(pady=10)
+    nav_frame.pack(pady=3)  # Reduced padding
 
     # Create stack of "pages" to demonstrate back button
     page_stack = []
@@ -48,11 +54,11 @@ def create(page, root):
     page_label = d3.Label(
         nav_frame,
         textvariable=current_page_var,
-        font=(ui_config.FONT_FAMILY, 16),
+        font=(ui_config.FONT_FAMILY, 10),  # Reduced from 12
         fg=ui_config.PRIMARY_COLOR,
         bg=ui_config.BACKGROUND_COLOR,
     )
-    page_label.pack(pady=10)
+    page_label.pack(pady=3)  # Reduced padding
 
     # Function to navigate to a new page
     def navigate_to_page(page_name):
@@ -60,46 +66,57 @@ def create(page, root):
         current_page_var.set(page_name)
         back_btn.config(state="normal" if page_stack else "disabled")
 
-    # Create buttons to navigate to "pages"
+    # Create buttons with a grid layout to prevent overflow
     buttons_frame = d3.Frame(main_frame, bg=ui_config.BACKGROUND_COLOR)
-    buttons_frame.pack(pady=20)
+    buttons_frame.pack(pady=3)  # Reduced padding
 
-    # Page 1 button
+    # Create a 2x2 grid for navigation buttons
+    left_buttons = d3.Frame(buttons_frame, bg=ui_config.BACKGROUND_COLOR)
+    left_buttons.pack(side="left", padx=5)
+
+    right_buttons = d3.Frame(buttons_frame, bg=ui_config.BACKGROUND_COLOR)
+    right_buttons.pack(side="right", padx=5)
+
+    # Page 1 button (left column)
     page1_btn = d3.Button(
-        buttons_frame,
-        text="Go to Page 1",
+        left_buttons,
+        text="Page 1",  # Shortened text
         command=lambda: navigate_to_page("Page 1"),
         bg=ui_config.PRIMARY_COLOR,
+        font=(ui_config.FONT_FAMILY, 8),  # Smaller font
     )
-    page1_btn.pack(pady=5)
+    page1_btn.pack(pady=2)
 
-    # Page 2 button
+    # Page 2 button (left column)
     page2_btn = d3.Button(
-        buttons_frame,
-        text="Go to Page 2",
+        left_buttons,
+        text="Page 2",  # Shortened text
         command=lambda: navigate_to_page("Page 2"),
         bg=ui_config.PRIMARY_COLOR,
+        font=(ui_config.FONT_FAMILY, 8),  # Smaller font
     )
-    page2_btn.pack(pady=5)
+    page2_btn.pack(pady=2)
 
-    # Page 3 button
+    # Page 3 button (right column)
     page3_btn = d3.Button(
-        buttons_frame,
-        text="Go to Page 3",
+        right_buttons,
+        text="Page 3",  # Shortened text
         command=lambda: navigate_to_page("Page 3"),
         bg=ui_config.PRIMARY_COLOR,
+        font=(ui_config.FONT_FAMILY, 8),  # Smaller font
     )
-    page3_btn.pack(pady=5)
+    page3_btn.pack(pady=2)
 
-    # Back button to demonstrate internal navigation
+    # Back button (right column)
     back_btn = d3.Button(
-        buttons_frame,
-        text="Back (Internal)",
+        right_buttons,
+        text="Back",  # Shortened text
         command=lambda: on_back_internal(),
         state="disabled",
         bg=ui_config.SECONDARY_COLOR,
+        font=(ui_config.FONT_FAMILY, 8),  # Smaller font
     )
-    back_btn.pack(pady=10)
+    back_btn.pack(pady=2)
 
     # Function for internal back button
     def on_back_internal():
@@ -118,24 +135,32 @@ def create(page, root):
 
     # Create a frame for the running status
     run_frame = d3.Frame(main_frame, bg=ui_config.BACKGROUND_COLOR)
-    run_frame.pack(pady=20)
+    run_frame.pack(pady=3)  # Reduced padding
+
+    # Put status and toggle in a horizontal layout
+    status_frame = d3.Frame(run_frame, bg=ui_config.BACKGROUND_COLOR)
+    status_frame.pack(side="left", padx=5)
+
+    toggle_frame = d3.Frame(run_frame, bg=ui_config.BACKGROUND_COLOR)
+    toggle_frame.pack(side="right", padx=5)
 
     run_status_label = d3.Label(
-        run_frame,
+        status_frame,
         text=f"Running: {'Yes' if _is_running else 'No'}",
-        font=(ui_config.FONT_FAMILY, 14),
+        font=(ui_config.FONT_FAMILY, 8),  # Reduced from 10
         fg=ui_config.PRIMARY_COLOR,
         bg=ui_config.BACKGROUND_COLOR,
     )
-    run_status_label.pack(pady=5)
+    run_status_label.pack(pady=2)
 
     toggle_btn = d3.Button(
-        run_frame,
-        text="Toggle Running State",
+        toggle_frame,
+        text="Toggle",  # Shortened text
         command=toggle_running,
         bg=ui_config.PRIMARY_COLOR,
+        font=(ui_config.FONT_FAMILY, 8),  # Smaller font
     )
-    toggle_btn.pack(pady=5)
+    toggle_btn.pack(pady=2)
 
     # Store references for access from other functions
     page.app_data = {
