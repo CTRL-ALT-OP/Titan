@@ -80,10 +80,18 @@ class Playlist:
 
     def add_song(self, song_path):
         """Add a song to the playlist"""
+        if song_path not in self.song_paths:
+            self.song_paths.append(song_path)
+            self._update_display_names()
+            return True
         return False
 
     def remove_song(self, index):
         """Remove a song from the playlist"""
+        if 0 <= index < len(self.song_paths):
+            self.song_paths.pop(index)
+            self._update_display_names()
+            return True
         return False
 
     def has_songs(self):
@@ -113,80 +121,212 @@ class PlaylistManager:
     ):
         self.songs_folder = songs_folder
         self.playlists_file = playlists_file
-        self.playlist_files = []
-        self.playlist_display_names = []
-        self.available_songs = []
-        self.available_song_names = []
-        self.playlists = []
+        self.available_songs = []  # All songs in the songs folder
+        self.available_song_names = []  # Display names for all available songs
+        self.playlists = []  # List of Playlist objects
         self.current_playlist_index = 0
         self.songs_loaded = False
 
+        # Make sure directories exist
+        os.makedirs(os.path.dirname(songs_folder), exist_ok=True)
+        os.makedirs(os.path.dirname(playlists_file), exist_ok=True)
+
     def load_songs(self):
         """Load songs from the songs folder"""
-        self.playlist_files = []
-        self.playlist_display_names = []
+        self.available_songs = []
+        self.available_song_names = []
+
+        # Ensure directories exist
+        os.makedirs(os.path.dirname(self.songs_folder), exist_ok=True)
+        os.makedirs(os.path.dirname(self.playlists_file), exist_ok=True)
 
         if not os.path.isdir(self.songs_folder):
             print(f"Songs folder not found: {self.songs_folder}")
-            self.playlist_display_names = ["No songs found"]
+            self.available_song_names = ["No songs found"]
             self.songs_loaded = True
             return
 
         for filename in os.listdir(self.songs_folder):
             if filename.endswith((".mp3", ".wav")):
                 full_path = os.path.join(self.songs_folder, filename)
-                self.playlist_files.append(full_path)
-                self.playlist_display_names.append(os.path.splitext(filename)[0])
+                self.available_songs.append(full_path)
+                self.available_song_names.append(os.path.splitext(filename)[0])
 
-        if not self.playlist_files:
-            self.playlist_display_names = ["No songs found"]
+        if not self.available_songs:
+            self.available_song_names = ["No songs found"]
 
+        # Create a default "All Songs" playlist if we have songs
+        if self.available_songs and not self.playlists:
+            all_songs_playlist = Playlist("All Songs", self.available_songs.copy())
+            self.playlists.append(all_songs_playlist)
+
+        self.load_playlists()
         self.songs_loaded = True
 
     def get_current_song_path(self, index):
-        if not self.playlist_files or index >= len(self.playlist_files):
+        if not self.playlists or self.current_playlist_index >= len(self.playlists):
             return None
-        return self.playlist_files[index]
+        song_path = self.playlists[self.current_playlist_index].get_song_path(index)
+
+        # If path doesn't include the songs folder, add it
+        if (
+            song_path
+            and not os.path.isabs(song_path)
+            and not song_path.startswith(self.songs_folder)
+        ):
+            return os.path.join(self.songs_folder, song_path)
+        return song_path
 
     def get_current_song_name(self, index):
-        if not self.playlist_display_names or index >= len(self.playlist_display_names):
+        if not self.playlists or self.current_playlist_index >= len(self.playlists):
             return "No song selected"
-        return self.playlist_display_names[index]
+        return self.playlists[self.current_playlist_index].get_song_name(index)
 
     def has_songs(self):
-        return bool(self.playlist_files)
+        if not self.playlists or self.current_playlist_index >= len(self.playlists):
+            return False
+        return self.playlists[self.current_playlist_index].has_songs()
 
     def get_playlist_display_names(self):
         """Get all playlist names"""
-        return []
+        return [playlist.name for playlist in self.playlists]
 
     def create_playlist(self, name):
         """Create a new playlist with the given name"""
-        return False
+        # Check if playlist with the same name already exists
+        for playlist in self.playlists:
+            if playlist.name.lower() == name.lower():
+                return False
+
+        self.playlists.append(Playlist(name))
+        self.save_playlists()
+        return True
 
     def delete_playlist(self, index):
         """Delete a playlist by index"""
+        if 0 <= index < len(self.playlists):
+            self.playlists.pop(index)
+            if self.current_playlist_index >= len(self.playlists) and self.playlists:
+                self.current_playlist_index = len(self.playlists) - 1
+            self.save_playlists()
+            return True
         return False
 
     def switch_playlist(self, index):
         """Switch to a different playlist"""
+        if 0 <= index < len(self.playlists):
+            self.current_playlist_index = index
+            return True
         return False
 
     def add_song_to_current_playlist(self, song_index):
         """Add a song from available songs to current playlist"""
+        if (
+            self.playlists
+            and self.current_playlist_index < len(self.playlists)
+            and 0 <= song_index < len(self.available_songs)
+        ):
+            song_path = self.available_songs[song_index]
+
+            # For custom playlists, store only the filename, not the full path
+            if self.playlists[self.current_playlist_index].name != "All Songs":
+                song_path = os.path.basename(song_path)
+
+            return self.playlists[self.current_playlist_index].add_song(song_path)
         return False
 
     def remove_song_from_current_playlist(self, song_index):
         """Remove a song from current playlist"""
+        if self.playlists and self.current_playlist_index < len(self.playlists):
+            result = self.playlists[self.current_playlist_index].remove_song(song_index)
+            if result:
+                self.save_playlists()
+            return result
         return False
 
     def save_playlists(self):
         """Save playlists to file"""
-        return False
+        try:
+            with open(self.playlists_file, "w") as f:
+                for playlist in self.playlists:
+                    # Skip the "All Songs" playlist as it's generated automatically
+                    if playlist.name == "All Songs":
+                        continue
+
+                    f.write(f"[{playlist.name}]\n")
+                    for song_path in playlist.song_paths:
+                        # Save only the filename, not the full path
+                        filename = os.path.basename(song_path)
+                        f.write(f"{filename}\n")
+                    f.write("\n")  # Empty line between playlists
+            return True
+        except Exception as e:
+            print(f"Error saving playlists: {e}")
+            return False
 
     def load_playlists(self):
         """Load playlists from file"""
-        return False
+        if not os.path.exists(self.playlists_file):
+            # Create an "All Songs" playlist if we have no saved playlists
+            if self.available_songs and not self.playlists:
+                all_songs_playlist = Playlist("All Songs", self.available_songs.copy())
+                self.playlists = [all_songs_playlist]
+            return
+
+        try:
+            # Create an "All Songs" playlist first
+            all_songs_playlist = Playlist("All Songs", self.available_songs.copy())
+            playlists = [all_songs_playlist]
+
+            current_playlist = None
+            with open(self.playlists_file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        current_playlist = None
+                        continue
+
+                    if line.startswith("[") and line.endswith("]"):
+                        playlist_name = line[1:-1]
+                        current_playlist = Playlist(playlist_name)
+                        playlists.append(current_playlist)
+                    elif current_playlist is not None:
+                        # This is a song filename, not a full path
+                        # Check if the song file exists
+                        filename = line
+                        full_path = os.path.join(self.songs_folder, filename)
+                        if os.path.exists(full_path):
+                            # Only add the filename, not the full path
+                            current_playlist.add_song(filename)
+
+            self.playlists = playlists
+            self.current_playlist_index = 0
+            return True
+        except Exception as e:
+            print(f"Error loading playlists: {e}")
+            return False
+
+    @property
+    def playlist_files(self):
+        """Get song paths from current playlist (for backward compatibility)"""
+        if not self.playlists or self.current_playlist_index >= len(self.playlists):
+            return []
+
+        # Need to convert relative paths to full paths
+        full_paths = []
+        for path in self.playlists[self.current_playlist_index].song_paths:
+            if not os.path.isabs(path) and not path.startswith(self.songs_folder):
+                full_paths.append(os.path.join(self.songs_folder, path))
+            else:
+                full_paths.append(path)
+        return full_paths
+
+    @property
+    def playlist_display_names(self):
+        """Get song names from current playlist (for backward compatibility)"""
+        if not self.playlists or self.current_playlist_index >= len(self.playlists):
+            return ["No songs found"]
+        return self.playlists[self.current_playlist_index].display_names
 
 
 class MusicPlayer:
@@ -389,6 +529,13 @@ class MusicPlayer:
         self.ui_built = True
         self._update_song_display()
         self._create_playlist_items()
+        self._update_playlist_selector()
+
+        # Set initial playlist selection
+        if self.playlist.playlists:
+            self.playlist_selector_var.set(self.playlist.playlists[0].name)
+            # Disable delete button for "All Songs"
+            self.delete_playlist_btn.config(state="disabled")
 
         # Update UI for current state
         if self.state.is_playing:
@@ -420,6 +567,88 @@ class MusicPlayer:
             "bold",
         )
         self.font_default = (ui_config.FONT_FAMILY, ui_config.TITLE_FONT_SIZE, "bold")
+
+        # Playlist management frame
+        self.playlist_frame = d3.Frame(
+            self.page.page_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+        )
+        self.playlist_frame.place(relx=00, rely=0.05, relwidth=1, height=30)
+
+        # Playlist selector dropdown
+        self.playlist_selector_var = d3.StringVar()
+        self.playlist_selector = d3.OptionMenu(
+            self.playlist_frame,
+            self.playlist_selector_var,
+            "All Songs",  # Default value
+            *["All Songs"],  # Initial options
+            command=self._on_playlist_selected,
+        )
+        self.playlist_selector.config(
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            highlightthickness=0,
+            width=7,
+        )
+        self.playlist_selector.pack(side="left", padx=5)
+
+        # Create playlist button
+        self.create_playlist_btn = d3.Button(
+            self.playlist_frame,
+            text="New",
+            font=(ui_config.FONT_FAMILY, 8),
+            command=self._show_create_playlist_dialog,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=4,
+        )
+        self.create_playlist_btn.pack(side="left", padx=2)
+
+        # Delete playlist button
+        self.delete_playlist_btn = d3.Button(
+            self.playlist_frame,
+            text="Delete",
+            font=(ui_config.FONT_FAMILY, 8),
+            command=self._confirm_delete_playlist,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=6,
+        )
+        self.delete_playlist_btn.pack(side="left", padx=2)
+
+        # Add song to playlist button
+        self.add_song_btn = d3.Button(
+            self.playlist_frame,
+            text="+ Song",
+            font=(ui_config.FONT_FAMILY, 8),
+            command=self._show_add_song_dialog,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=8,
+        )
+        self.add_song_btn.pack(side="left", padx=2)
+
+        # Remove song from playlist button
+        self.remove_song_btn = d3.Button(
+            self.playlist_frame,
+            text="- Song",
+            font=(ui_config.FONT_FAMILY, 8),
+            command=self._confirm_remove_song,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=12,
+        )
+        self.remove_song_btn.pack(side="left", padx=2)
 
         # Song title label
         self.song_label = d3.Label(
@@ -468,9 +697,33 @@ class MusicPlayer:
         # Playlist container
         self._create_playlist_container(ui_config)
 
+        # Create notification frame for messages
+        self._create_notification_frame(ui_config)
+
     def _create_notification_frame(self, ui_config):
         """Create a frame for showing notifications instead of messageboxes"""
-        pass
+        self.notification_frame = d3.Frame(
+            self.page.page_frame,
+            bg=ui_config.ACTIVE_BACKGROUND_COLOR,
+            highlightthickness=1,
+            highlightbackground=ui_config.PRIMARY_COLOR,
+        )
+
+        self.notification_label = d3.Label(
+            self.notification_frame,
+            text="",
+            font=(ui_config.FONT_FAMILY, 10),
+            bg=ui_config.ACTIVE_BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            wraplength=350,
+            justify="center",
+            padx=10,
+            pady=10,
+        )
+        self.notification_label.pack(expand=True, fill="both")
+
+        # Hide by default
+        self.notification_frame.place_forget()
 
     def _create_playlist_container(self, ui_config):
         """Create the scrollable playlist container"""
@@ -480,7 +733,7 @@ class MusicPlayer:
             highlightthickness=0,
         )
         self.playlist_container.place(
-            relx=0.1, rely=0.1, relwidth=0.8, relheight=0.55, anchor="nw"
+            relx=0.1, rely=0.2, relwidth=0.8, relheight=0.45, anchor="nw"
         )
 
         self.canvas = d3.Canvas(
@@ -520,11 +773,62 @@ class MusicPlayer:
 
     def _on_playlist_selected(self, selected_playlist):
         """Handle playlist selection from dropdown"""
-        pass
+        playlist_names = self.playlist.get_playlist_display_names()
+        if selected_playlist in playlist_names:
+            index = playlist_names.index(selected_playlist)
+            if self.playlist.switch_playlist(index):
+                # Stop any currently playing music
+                if self.state.is_playing:
+                    pygame.mixer.music.stop()
+
+                # Reset playback state
+                self.state.is_playing = False
+                self.state.song_paused = False
+                self.state.current_song_index = 0
+                self.state.current_song_length = 0
+                self.reset_state()
+
+                # Update button icons
+                if self.pause_play:
+                    self.pause_play.configure(text=self.ICON_PLAY)
+
+                # Stop timers
+                self._stop_song_end_checker()
+                self._stop_progress_updates()
+
+                # Update UI
+                self._create_playlist_items()
+                self._update_song_display()
+
+                # Enable/disable delete button (don't allow deleting "All Songs")
+                self.delete_playlist_btn.config(
+                    state="normal" if selected_playlist != "All Songs" else "disabled"
+                )
 
     def _update_playlist_selector(self):
         """Update the playlist selector dropdown with current playlists"""
-        pass
+        if not self.playlist_selector:
+            return
+
+        # Get playlist names
+        playlist_names = self.playlist.get_playlist_display_names()
+
+        # Update the dropdown menu
+        menu = self.playlist_selector["menu"]
+        menu.delete(0, "end")
+
+        for name in playlist_names:
+            menu.add_command(
+                label=name,
+                command=d3._setit(
+                    self.playlist_selector_var, name, self._on_playlist_selected
+                ),
+            )
+
+        # Make sure the current selection is valid
+        current_selection = self.playlist_selector_var.get()
+        if current_selection not in playlist_names and playlist_names:
+            self.playlist_selector_var.set(playlist_names[0])
 
     def _start_song_end_checker(self):
         """Start checking for song completion"""
@@ -774,7 +1078,35 @@ class MusicPlayer:
 
     def _show_notification(self, message, duration=500, notification_type="info"):
         """Show a notification message"""
-        pass
+        if not self.notification_frame or not self.notification_label:
+            return
+
+        # Choose colors based on notification type
+        ui_config = config["ui"]
+        bg_color = ui_config.BACKGROUND_COLOR
+        fg_color = ui_config.PRIMARY_COLOR
+
+        if notification_type == "success":
+            bg_color = "#ccffcc"
+            fg_color = "#006600"
+
+        # Configure the notification
+        self.notification_frame.configure(bg=bg_color)
+        self.notification_label.configure(text=message, bg=bg_color, fg=fg_color)
+
+        # Position in the center of the screen
+        self.notification_frame.place(
+            relx=0.5, rely=0.4, anchor="center", width=350, height=100
+        )
+
+        # Cancel any existing timer
+        if self.notification_timer:
+            self.root.after_cancel(self.notification_timer)
+
+        # Schedule the notification to disappear
+        self.notification_timer = self.root.after(
+            duration, self.notification_frame.place_forget
+        )
 
     def _create_control_buttons(self, ui_config, button_font):
         """Create the playback control buttons"""
@@ -793,7 +1125,7 @@ class MusicPlayer:
             padx=1,
             pady=1,
         )
-        self.prev_btn.place(relx=0.35, rely=0.9, anchor="center")
+        self.prev_btn.place(relx=0.35, rely=0.91, relheight=0.15, anchor="center")
 
         # Play/Pause button
         self.pause_play = d3.Button(
@@ -810,7 +1142,7 @@ class MusicPlayer:
             padx=1,
             pady=1,
         )
-        self.pause_play.place(relx=0.5, rely=0.9, anchor="center")
+        self.pause_play.place(relx=0.5, rely=0.91, relheight=0.15, anchor="center")
 
         # Next button
         self.next_btn = d3.Button(
@@ -827,7 +1159,7 @@ class MusicPlayer:
             padx=1,
             pady=1,
         )
-        self.next_btn.place(relx=0.65, rely=0.9, anchor="center")
+        self.next_btn.place(relx=0.65, rely=0.91, relheight=0.15, anchor="center")
 
     def _on_mousewheel_windows(self, event):
         """Windows mousewheel handler"""
@@ -879,7 +1211,7 @@ class MusicPlayer:
         ]:
             no_songs_label = d3.Label(
                 self.scrollable_frame,
-                text="No songs found in apps/_music_player/songs",
+                text="No songs found in the current playlist",
                 font=(ui_config.FONT_FAMILY, 12),
                 bg=ui_config.BACKGROUND_COLOR,
                 fg=ui_config.PRIMARY_COLOR,
@@ -920,27 +1252,516 @@ class MusicPlayer:
 
     def _show_create_playlist_dialog(self):
         """Show dialog to create a new playlist"""
-        pass
+        if self.dialog_active:
+            return
+
+        ui_config = config["ui"]
+        self.dialog_active = True
+
+        # Create the dialog frame
+        self.dialog_frame = d3.Frame(
+            self.page.page_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            highlightthickness=1,
+            highlightbackground=ui_config.PRIMARY_COLOR,
+        )
+        self.dialog_frame.place(
+            relx=0.5, rely=0.5, anchor="center", width=300, height=150
+        )
+
+        # Dialog header
+        header = d3.Label(
+            self.dialog_frame,
+            text="Create New Playlist",
+            font=(ui_config.FONT_FAMILY, 12, "bold"),
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+        )
+        header.pack(pady=(10, 5))
+
+        # Dialog content
+        content_frame = d3.Frame(
+            self.dialog_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            padx=20,
+            pady=10,
+        )
+        content_frame.pack(fill="both", expand=True)
+
+        d3.Label(
+            content_frame,
+            text="Playlist Name:",
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            anchor="w",
+        ).pack(anchor="w")
+
+        name_entry = d3.Entry(content_frame, width=30)
+        name_entry.pack(fill="x", pady=5)
+        name_entry.focus_set()
+
+        # Buttons frame
+        btn_frame = d3.Frame(
+            self.dialog_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            padx=20,
+            pady=10,
+        )
+        btn_frame.pack(fill="x")
+
+        def cancel_dialog():
+            self.dialog_frame.destroy()
+            self.dialog_frame = None
+            self.dialog_active = False
+
+        def create_playlist():
+            playlist_name = name_entry.get().strip()
+            if playlist_name:
+                if self.playlist.create_playlist(playlist_name):
+                    self._update_playlist_selector()
+                    # Select the new playlist
+                    self.playlist_selector_var.set(playlist_name)
+                    self._on_playlist_selected(playlist_name)
+                    cancel_dialog()
+                    self._show_notification(
+                        f"Playlist '{playlist_name}' created",
+                        notification_type="success",
+                    )
+                else:
+                    # Show error that playlist already exists
+                    self._show_notification(
+                        f"Playlist '{playlist_name}' already exists",
+                        notification_type="error",
+                    )
+            else:
+                self._show_notification(
+                    "Please enter a playlist name", notification_type="error"
+                )
+
+        d3.Button(
+            btn_frame,
+            text="Cancel",
+            command=cancel_dialog,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=8,
+        ).pack(side="right", padx=5)
+
+        d3.Button(
+            btn_frame,
+            text="Create",
+            command=create_playlist,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=8,
+        ).pack(side="right")
+
+        # Bind Enter key to create playlist
+        name_entry.bind("<Return>", lambda event: create_playlist())
 
     def _confirm_delete_playlist(self):
         """Show confirmation dialog before deleting a playlist"""
-        pass
+        current_playlist = self.playlist_selector_var.get()
+
+        # Don't allow deleting "All Songs"
+        if current_playlist == "All Songs":
+            self._show_notification(
+                "Cannot delete the 'All Songs' playlist", notification_type="info"
+            )
+            return
+
+        if self.dialog_active:
+            return
+
+        ui_config = config["ui"]
+        self.dialog_active = True
+
+        # Create the dialog frame
+        self.dialog_frame = d3.Frame(
+            self.page.page_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            highlightthickness=1,
+            highlightbackground=ui_config.PRIMARY_COLOR,
+        )
+        self.dialog_frame.place(
+            relx=0.5, rely=0.5, anchor="center", width=300, height=150
+        )
+
+        # Dialog header
+        header = d3.Label(
+            self.dialog_frame,
+            text="Confirm Delete",
+            font=(ui_config.FONT_FAMILY, 12, "bold"),
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+        )
+        header.pack(pady=(10, 5))
+
+        # Dialog content
+        content_frame = d3.Frame(
+            self.dialog_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            padx=20,
+            pady=10,
+        )
+        content_frame.pack(fill="both", expand=True)
+
+        d3.Label(
+            content_frame,
+            text=f"Delete playlist '{current_playlist}'?",
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            wraplength=250,
+        ).pack(pady=10)
+
+        # Buttons frame
+        btn_frame = d3.Frame(
+            self.dialog_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            padx=20,
+            pady=10,
+        )
+        btn_frame.pack(fill="x")
+
+        def cancel_dialog():
+            self.dialog_frame.destroy()
+            self.dialog_frame = None
+            self.dialog_active = False
+
+        def delete_playlist():
+            playlist_names = self.playlist.get_playlist_display_names()
+            if current_playlist in playlist_names:
+                index = playlist_names.index(current_playlist)
+                if self.playlist.delete_playlist(index):
+                    # Update selector and switch to "All Songs"
+                    self._update_playlist_selector()
+                    self.playlist_selector_var.set("All Songs")
+                    self._on_playlist_selected("All Songs")
+                    cancel_dialog()
+                    self._show_notification(
+                        f"Playlist '{current_playlist}' deleted",
+                        notification_type="success",
+                    )
+
+        d3.Button(
+            btn_frame,
+            text="No",
+            command=cancel_dialog,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=8,
+        ).pack(side="right", padx=5)
+
+        d3.Button(
+            btn_frame,
+            text="Yes",
+            command=delete_playlist,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=8,
+        ).pack(side="right")
 
     def _show_add_song_dialog(self):
         """Show dialog to add songs to the current playlist"""
-        pass
+        # Don't allow adding songs to "All Songs" playlist
+        if self.playlist_selector_var.get() == "All Songs":
+            self._show_notification(
+                "Cannot add songs to 'All Songs' playlist.\nCreate a new playlist first.",
+                notification_type="info",
+            )
+            return
+
+        if self.dialog_active:
+            return
+
+        ui_config = config["ui"]
+        self.dialog_active = True
+
+        # Create the dialog frame
+        self.dialog_frame = d3.Frame(
+            self.page.page_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            highlightthickness=1,
+            highlightbackground=ui_config.PRIMARY_COLOR,
+        )
+        self.dialog_frame.place(
+            relx=0.5,
+            rely=0.5,
+            anchor="center",
+            width=config["window"].FRAME_WIDTH,
+            height=config["window"].FRAME_HEIGHT,
+        )
+
+        # Dialog header
+        header = d3.Label(
+            self.dialog_frame,
+            text=f"Add Songs to {self.playlist_selector_var.get()}",
+            font=(ui_config.FONT_FAMILY, 12, "bold"),
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+        )
+        header.pack(pady=(10, 5))
+
+        # Dialog content
+        content_frame = d3.Frame(
+            self.dialog_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            padx=20,
+            pady=10,
+        )
+        content_frame.pack(fill="both", expand=True)
+
+        d3.Label(
+            content_frame,
+            text="Available Songs:",
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            anchor="w",
+        ).pack(anchor="w")
+
+        # Create listbox with scrollbar
+        list_frame = d3.Frame(content_frame, bg=ui_config.BACKGROUND_COLOR)
+        list_frame.pack(side="left")
+
+        scrollbar = d3.Scrollbar(list_frame)
+        scrollbar.pack(side="right", fill="y")
+
+        song_listbox = d3.Listbox(
+            list_frame,
+            selectmode="extended",
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            yscrollcommand=scrollbar.set,
+        )
+        song_listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=song_listbox.yview)
+
+        # Populate the listbox with available songs
+        for idx, song_name in enumerate(self.playlist.available_song_names):
+            song_path = self.playlist.available_songs[idx]
+            # For custom playlists, store only the filename, not the full path
+            song_path = os.path.basename(song_path)
+            if (
+                song_path
+                not in self.playlist.playlists[
+                    self.playlist.current_playlist_index
+                ].song_paths
+            ):
+                song_listbox.insert("end", song_name)
+
+        # Buttons frame
+        btn_frame = d3.Frame(
+            content_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            padx=20,
+            pady=10,
+        )
+        btn_frame.pack(side="right")
+
+        def cancel_dialog():
+            self.dialog_frame.destroy()
+            self.dialog_frame = None
+            self.dialog_active = False
+
+        def add_selected_songs():
+            selected_indices = song_listbox.curselection()
+            if not selected_indices:
+                self._show_notification("No songs selected", notification_type="error")
+                return
+
+            songs_added = 0
+            for i in selected_indices:
+                if self.playlist.add_song_to_current_playlist(
+                    self.playlist.available_song_names.index(song_listbox.get(i))
+                ):
+                    songs_added += 1
+
+            if songs_added > 0:
+                self.playlist.save_playlists()
+                self._create_playlist_items()
+                cancel_dialog()
+                self._show_notification(
+                    f"Added {songs_added} song(s) to playlist",
+                    notification_type="success",
+                )
+            else:
+                cancel_dialog()
+                self._show_notification(
+                    "No new songs were added to the playlist", notification_type="info"
+                )
+
+        d3.Button(
+            btn_frame,
+            text="Cancel",
+            command=cancel_dialog,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=8,
+        ).pack()
+
+        d3.Button(
+            btn_frame,
+            text="Add Selected",
+            command=add_selected_songs,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=12,
+        ).pack()
 
     def _confirm_remove_song(self):
         """Show confirmation dialog before removing a song"""
-        pass
+        # Don't allow removing songs from "All Songs" playlist
+        if self.playlist_selector_var.get() == "All Songs":
+            self._show_notification(
+                "Cannot remove songs from 'All Songs' playlist",
+                notification_type="info",
+            )
+            return
+
+        # Check if a song is currently selected
+        if self.state.current_song_index is None or not self.playlist.has_songs():
+            self._show_notification("No song selected", notification_type="info")
+            return
+
+        # Get current song name
+        song_name = self.playlist.get_current_song_name(self.state.current_song_index)
+
+        if self.dialog_active:
+            return
+
+        ui_config = config["ui"]
+        self.dialog_active = True
+
+        # Create the dialog frame
+        self.dialog_frame = d3.Frame(
+            self.page.page_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            highlightthickness=1,
+            highlightbackground=ui_config.PRIMARY_COLOR,
+        )
+        self.dialog_frame.place(
+            relx=0.5, rely=0.5, anchor="center", width=300, height=150
+        )
+
+        # Dialog header
+        header = d3.Label(
+            self.dialog_frame,
+            text="Confirm Remove",
+            font=(ui_config.FONT_FAMILY, 12, "bold"),
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+        )
+        header.pack(pady=(10, 5))
+
+        # Dialog content
+        content_frame = d3.Frame(
+            self.dialog_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            padx=20,
+            pady=10,
+        )
+        content_frame.pack(fill="both", expand=True)
+
+        d3.Label(
+            content_frame,
+            text=f"Remove '{song_name}' from playlist?",
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            wraplength=250,
+        ).pack(pady=10)
+
+        # Buttons frame
+        btn_frame = d3.Frame(
+            self.dialog_frame,
+            bg=ui_config.BACKGROUND_COLOR,
+            padx=20,
+            pady=10,
+        )
+        btn_frame.pack(fill="x")
+
+        def cancel_dialog():
+            self.dialog_frame.destroy()
+            self.dialog_frame = None
+            self.dialog_active = False
+
+        def remove_song():
+            # Stop playback if this song is playing
+            was_playing = self.state.is_playing
+            if was_playing:
+                pygame.mixer.music.stop()
+                self.state.is_playing = False
+                self.state.song_paused = False
+
+            # Remove the song
+            if self.playlist.remove_song_from_current_playlist(
+                self.state.current_song_index
+            ):
+                # Reset state if no songs left
+                if not self.playlist.has_songs():
+                    self.state.current_song_index = 0
+                    self.state.current_song_length = 0
+                    self.reset_state()
+                # Handle index if we removed the last song
+                elif self.state.current_song_index >= len(self.playlist.playlist_files):
+                    self.state.current_song_index = (
+                        len(self.playlist.playlist_files) - 1
+                    )
+
+                # Update UI
+                self._create_playlist_items()
+                self._update_song_display()
+
+                # Resume playback if needed
+                if was_playing and self.playlist.has_songs():
+                    self._start_current_song()
+                    self._update_playing_state_ui()
+
+                cancel_dialog()
+                self._show_notification(
+                    f"Removed '{song_name}' from playlist", notification_type="success"
+                )
+
+        d3.Button(
+            btn_frame,
+            text="No",
+            command=cancel_dialog,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=8,
+        ).pack(side="right", padx=5)
+
+        d3.Button(
+            btn_frame,
+            text="Yes",
+            command=remove_song,
+            bg=ui_config.BACKGROUND_COLOR,
+            fg=ui_config.PRIMARY_COLOR,
+            activebackground=ui_config.ACTIVE_BACKGROUND_COLOR,
+            activeforeground=ui_config.PRIMARY_COLOR,
+            width=8,
+        ).pack(side="right")
 
     def _remove_current_song(self):
         """Remove the currently selected song from the playlist - replaced by confirmation dialog"""
-        pass
+        self._confirm_remove_song()
 
     def _delete_current_playlist(self):
         """Delete the currently selected playlist - replaced by confirmation dialog"""
-        pass
+        self._confirm_delete_playlist()
 
 
 def create(page, root):
