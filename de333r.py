@@ -143,6 +143,30 @@ class page:
         self.finished = False
         self.create()
 
+    def create_notification(self, text, type="info"):
+        """Create a notification frame."""
+        return None
+
+    def create_popup(self, title, content: d3.Frame):
+        """Create a popup frame."""
+        return None
+
+    def create_warning(self, text):
+        return self.create_notification(text, "warning")
+
+    def create_error(self, text):
+        return self.create_notification(text, "error")
+
+    def create_success(self, text):
+        return self.create_notification(text, "success")
+
+    def create_info(self, text):
+        return self.create_notification(text, "info")
+
+
+class notification:
+    pass
+
 
 class popup:
     """Popup frame for displaying app lists or other information."""

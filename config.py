@@ -25,6 +25,8 @@ class AnimationConfig:
     TWEEN_CHECK_INTERVAL = 20  # milliseconds
     TWEEN_STEP_SIZE = 15  # pixels
 
+    NOTIFICATION_DURATION = 500  # milliseconds
+
 
 class AppConfig:
     """Application-specific configuration."""
