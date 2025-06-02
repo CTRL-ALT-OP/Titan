@@ -606,3 +606,160 @@ class TestIntegrationScenarios:
         assert (
             has_cleanup or True
         ), "Page should have notification cleanup capability (when implemented)"
+
+
+class TestNotificationTimerBehavior:
+    """Test suite for notification timer behavior and root widget usage."""
+
+    def test_notification_after_called_on_root_widget_only(self, page_instance):
+        """Test that .after() is called only on the Tk root widget, not other widgets."""
+        with patch.dict("sys.modules", {"tkinter": mock_tk, "d3": mock_tk}):
+            # Mock the root widget and a parent widget separately
+            mock_root = MagicMock()
+            mock_parent = MagicMock()
+            mock_parent.nametowidget.return_value = mock_root
+
+            # Mock the Frame and Label classes
+            with patch("tkinter.Frame") as mock_frame_class, patch(
+                "tkinter.Label"
+            ) as mock_label_class:
+                mock_frame = MagicMock()
+                mock_label = MagicMock()
+                mock_frame_class.return_value = mock_frame
+                mock_label_class.return_value = mock_label
+
+                # Import the module and create notification directly
+                spec = importlib.util.spec_from_file_location("de333r", "de333r.py")
+                de333r = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(de333r)
+
+                # Create notification instance
+                notification_instance = de333r.notification(
+                    mock_parent, "Test message", "info", 1000
+                )
+
+                # Verify that .after() was called on the root widget, not the parent
+                mock_root.after.assert_called_once()
+                mock_parent.after.assert_not_called()
+
+                # Verify the correct parameters were passed to .after()
+                call_args = mock_root.after.call_args
+                assert call_args[0][0] == 1000  # duration
+                assert callable(call_args[0][1])  # callback function
+
+    def test_notification_after_cancel_called_on_root_widget(self, page_instance):
+        """Test that .after_cancel() is called on the Tk root widget when closing notification."""
+        with patch.dict("sys.modules", {"tkinter": mock_tk, "d3": mock_tk}):
+            # Mock the root widget and a parent widget separately
+            mock_root = MagicMock()
+            mock_parent = MagicMock()
+            mock_parent.nametowidget.return_value = mock_root
+
+            # Mock the Frame and Label classes
+            with patch("tkinter.Frame") as mock_frame_class, patch(
+                "tkinter.Label"
+            ) as mock_label_class:
+                mock_frame = MagicMock()
+                mock_label = MagicMock()
+                mock_frame_class.return_value = mock_frame
+                mock_label_class.return_value = mock_label
+
+                # Import the module and create notification directly
+                spec = importlib.util.spec_from_file_location("de333r", "de333r.py")
+                de333r = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(de333r)
+
+                # Create notification instance
+                notification_instance = de333r.notification(
+                    mock_parent, "Test message", "info", 1000
+                )
+
+                # Reset call history to focus on close() behavior
+                mock_root.reset_mock()
+                mock_parent.reset_mock()
+
+                # Call close() method
+                notification_instance.close()
+
+                # Verify that .after_cancel() was called on the root widget, not the parent
+                mock_root.after_cancel.assert_called_once()
+                mock_parent.after_cancel.assert_not_called()
+
+    def test_notification_uses_nametowidget_to_get_root(self, page_instance):
+        """Test that notification uses nametowidget('.') to get the root widget."""
+        with patch.dict("sys.modules", {"tkinter": mock_tk, "d3": mock_tk}):
+            # Mock the root widget and a parent widget separately
+            mock_root = MagicMock()
+            mock_parent = MagicMock()
+            mock_parent.nametowidget.return_value = mock_root
+
+            # Mock the Frame and Label classes
+            with patch("tkinter.Frame") as mock_frame_class, patch(
+                "tkinter.Label"
+            ) as mock_label_class:
+                mock_frame = MagicMock()
+                mock_label = MagicMock()
+                mock_frame_class.return_value = mock_frame
+                mock_label_class.return_value = mock_label
+
+                # Import the module and create notification directly
+                spec = importlib.util.spec_from_file_location("de333r", "de333r.py")
+                de333r = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(de333r)
+
+                # Create notification instance
+                notification_instance = de333r.notification(
+                    mock_parent, "Test message", "info", 1000
+                )
+
+                # Verify that nametowidget was called with "." to get the root
+                mock_parent.nametowidget.assert_called_once_with(".")
+
+                # Verify that the root widget is stored correctly
+                assert notification_instance.root == mock_root
+
+    def test_notification_timer_cancellation_on_manual_close(self, page_instance):
+        """Test that timer is properly cancelled when notification is manually closed."""
+        with patch.dict("sys.modules", {"tkinter": mock_tk, "d3": mock_tk}):
+            # Mock the root widget and a parent widget separately
+            mock_root = MagicMock()
+            mock_parent = MagicMock()
+            mock_parent.nametowidget.return_value = mock_root
+
+            # Mock timer ID returned by .after()
+            mock_timer_id = "timer_123"
+            mock_root.after.return_value = mock_timer_id
+
+            # Mock the Frame and Label classes
+            with patch("tkinter.Frame") as mock_frame_class, patch(
+                "tkinter.Label"
+            ) as mock_label_class:
+                mock_frame = MagicMock()
+                mock_label = MagicMock()
+                mock_frame_class.return_value = mock_frame
+                mock_label_class.return_value = mock_label
+
+                # Import the module and create notification directly
+                spec = importlib.util.spec_from_file_location("de333r", "de333r.py")
+                de333r = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(de333r)
+
+                # Create notification instance
+                notification_instance = de333r.notification(
+                    mock_parent, "Test message", "info", 1000
+                )
+
+                # Verify timer ID is stored
+                assert notification_instance.notification_timer == mock_timer_id
+
+                # Reset mocks to focus on close behavior
+                mock_root.reset_mock()
+
+                # Call close() method
+                notification_instance.close()
+
+                # Verify that after_cancel was called with the correct timer ID
+                mock_root.after_cancel.assert_called_once_with(mock_timer_id)
+
+                # Verify that timer ID is cleared
+                assert notification_instance.notification_timer is None
