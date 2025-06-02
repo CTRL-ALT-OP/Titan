@@ -144,12 +144,34 @@ class page:
         self.create()
 
     def create_notification(self, text, type="info"):
-        """Create a notification frame."""
-        return None
+        """Create a notification frame.
+
+        Args:
+            text: Text to display in notification
+            type: Type of notification ("info", "success", "warning", "error")
+
+        Returns:
+            notification: The created notification instance
+        """
+        return notification(self.true_root, text, type)
 
     def create_popup(self, title, content: d3.Frame):
-        """Create a popup frame."""
-        return None
+        """Create a popup frame.
+
+        Args:
+            title: Title of the popup
+            content: Content frame to display in popup
+
+        Returns:
+            popup: The created popup instance
+        """
+        popup_instance = popup(self.true_root, title)
+
+        # If content frame is provided, pack it into the popup's content frame
+        if content:
+            content.pack(in_=popup_instance.content_frame, fill="both", expand=True)
+
+        return popup_instance
 
     def create_warning(self, text):
         return self.create_notification(text, "warning")
@@ -172,7 +194,80 @@ class notification:
         type="info",
         duration=config["animation"].NOTIFICATION_DURATION,
     ):
-        pass
+        """Create and display a notification.
+
+        Args:
+            parent: Parent widget to place notification on
+            text: Text to display in notification
+            type: Type of notification ("info", "success", "warning", "error")
+            duration: Duration to show notification in milliseconds
+        """
+        self.parent = parent
+        self.root = parent.nametowidget(".")
+        self.text = text
+        self.type = type
+        self.duration = duration
+        self.notification_timer = None
+
+        # Get UI configuration
+        ui_config = config["ui"]
+
+        # Choose colors based on notification type
+        bg_color = ui_config.BACKGROUND_COLOR
+        fg_color = ui_config.PRIMARY_COLOR
+
+        if type == "success":
+            bg_color = "#ccffcc"
+            fg_color = "#006600"
+        elif type == "warning":
+            bg_color = "#fff3cd"
+            fg_color = "#856404"
+        elif type == "error":
+            bg_color = "#f8d7da"
+            fg_color = "#721c24"
+
+        # Create notification frame
+        self.notification_frame = d3.Frame(
+            parent,
+            bg=bg_color,
+            highlightthickness=1,
+            highlightbackground=fg_color,
+        )
+
+        # Create notification label
+        self.notification_label = d3.Label(
+            self.notification_frame,
+            text=text,
+            font=(ui_config.FONT_FAMILY, 10),
+            bg=bg_color,
+            fg=fg_color,
+            wraplength=350,
+            justify="center",
+            padx=10,
+            pady=10,
+        )
+        self.notification_label.pack(expand=True, fill="both")
+
+        # Position in the center of the screen
+        self.notification_frame.place(
+            relx=0.5, rely=0.4, anchor="center", width=350, height=100
+        )
+
+        # Schedule the notification to disappear
+        self.notification_timer = self.root.after(duration, self._hide_notification)
+
+    def _hide_notification(self):
+        """Hide the notification by removing it from view."""
+        if self.notification_frame:
+            self.notification_frame.place_forget()
+            self.notification_frame.destroy()
+
+    def close(self):
+        """Manually close the notification."""
+        if self.notification_timer:
+            self.root.after_cancel(self.notification_timer)
+            self.notification_timer = None
+        self._hide_notification()
 
 
 class popup:
