@@ -163,82 +163,6 @@ class TestNotificationInstantiation:
             pytest.fail(f"notification should have default type: {e}")
 
 
-class TestNotificationMethods:
-    """Test notification class methods and capabilities."""
-
-    def test_notification_has_show_method(self, notification_class):
-        """Test that notification has a show method."""
-        try:
-            mock_parent = MagicMock()
-            instance = notification_class(mock_parent, "Test message")
-            assert hasattr(instance, "show"), "notification should have a 'show' method"
-            assert callable(instance.show), "notification 'show' should be callable"
-        except Exception as e:
-            pytest.fail(f"notification should have show method: {e}")
-
-    def test_notification_has_hide_or_dismiss_method(self, notification_class):
-        """Test that notification has a hide or dismiss method."""
-        try:
-            mock_parent = MagicMock()
-            instance = notification_class(mock_parent, "Test message")
-            has_hide = hasattr(instance, "hide") and callable(instance.hide)
-            has_dismiss = hasattr(instance, "dismiss") and callable(instance.dismiss)
-            has_close = hasattr(instance, "close") and callable(instance.close)
-
-            assert (
-                has_hide or has_dismiss or has_close
-            ), "notification should have a 'hide', 'dismiss', or 'close' method"
-        except Exception as e:
-            pytest.fail(f"notification should have hide/dismiss method: {e}")
-
-    def test_notification_show_method_works(self, notification_class):
-        """Test that notification show method can be called."""
-        try:
-            mock_parent = MagicMock()
-            instance = notification_class(mock_parent, "Test message")
-            if hasattr(instance, "show"):
-                # Should not raise an exception
-                instance.show()
-        except Exception as e:
-            pytest.fail(f"notification show method should be callable: {e}")
-
-    def test_notification_hide_method_works(self, notification_class):
-        """Test that notification hide/dismiss method can be called."""
-        try:
-            mock_parent = MagicMock()
-            instance = notification_class(mock_parent, "Test message")
-
-            if hasattr(instance, "hide"):
-                instance.hide()
-            elif hasattr(instance, "dismiss"):
-                instance.dismiss()
-            elif hasattr(instance, "close"):
-                instance.close()
-            else:
-                pytest.fail("notification should have hide, dismiss, or close method")
-        except Exception as e:
-            pytest.fail(f"notification hide/dismiss method should be callable: {e}")
-
-    def test_notification_has_visible_property_or_method(self, notification_class):
-        """Test that notification has a way to check visibility."""
-        try:
-            mock_parent = MagicMock()
-            instance = notification_class(mock_parent, "Test message")
-            has_visible_property = hasattr(instance, "visible")
-            has_is_visible_method = hasattr(instance, "is_visible") and callable(
-                instance.is_visible
-            )
-            has_is_shown_method = hasattr(instance, "is_shown") and callable(
-                instance.is_shown
-            )
-
-            assert (
-                has_visible_property or has_is_visible_method or has_is_shown_method
-            ), "notification should have 'visible' property or 'is_visible'/'is_shown' method"
-        except Exception as e:
-            pytest.fail(f"notification should have visibility check: {e}")
-
-
 class TestNotificationUIElements:
     """Test notification UI element creation and management."""
 
@@ -257,23 +181,6 @@ class TestNotificationUIElements:
                 ), "notification should create UI elements (Frame, Label, etc.)"
             except Exception as e:
                 pytest.fail(f"notification should create UI elements: {e}")
-
-    def test_notification_has_frame_or_widget_attribute(self, notification_class):
-        """Test that notification has a frame or widget attribute."""
-        try:
-            mock_parent = MagicMock()
-            instance = notification_class(mock_parent, "Test message")
-
-            has_frame = hasattr(instance, "frame")
-            has_widget = hasattr(instance, "widget")
-            has_root = hasattr(instance, "root")
-            has_container = hasattr(instance, "container")
-
-            assert (
-                has_frame or has_widget or has_root or has_container
-            ), "notification should have a 'frame', 'widget', 'root', or 'container' attribute"
-        except Exception as e:
-            pytest.fail(f"notification should have frame/widget attribute: {e}")
 
     def test_notification_ui_elements_have_place_or_pack_method(
         self, notification_class

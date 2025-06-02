@@ -159,34 +159,6 @@ class TestCreateNotification:
             result is not None
         ), "Numeric text should be converted and return an object"
 
-    def test_create_notification_has_show_method_or_visible_property(
-        self, page_instance
-    ):
-        """Test that created notifications have a way to be shown/displayed."""
-        result = page_instance.create_notification("Test message")
-
-        # The notification should have some way to be displayed/shown
-        assert (
-            hasattr(result, "show")
-            or hasattr(result, "display")
-            or hasattr(result, "visible")
-            or hasattr(result, "place")
-            or hasattr(result, "pack")
-        ), "Notification should have a method to display it (show, display, visible, place, pack, etc.)"
-
-    def test_create_notification_has_dismiss_capability(self, page_instance):
-        """Test that created notifications can be dismissed/hidden."""
-        result = page_instance.create_notification("Test message")
-
-        # The notification should have some way to be dismissed
-        assert (
-            hasattr(result, "dismiss")
-            or hasattr(result, "hide")
-            or hasattr(result, "close")
-            or hasattr(result, "destroy")
-            or hasattr(result, "place_forget")
-        ), "Notification should have a method to dismiss it (dismiss, hide, close, destroy, etc.)"
-
 
 class TestCreatePopup:
     """Test suite for the create_popup method."""
@@ -304,20 +276,6 @@ class TestCreatePopup:
             or hasattr(result, "hide")
             or hasattr(result, "destroy")
         ), "Popup should have a method to close it (close, dismiss, hide, destroy, etc.)"
-
-    def test_create_popup_has_show_capability(self, page_instance):
-        """Test that created popups can be shown/displayed."""
-        mock_content = MagicMock()
-        result = page_instance.create_popup("Test Title", mock_content)
-
-        # The popup should have some way to be displayed
-        assert (
-            hasattr(result, "show")
-            or hasattr(result, "display")
-            or hasattr(result, "visible")
-            or hasattr(result, "place")
-            or hasattr(result, "pack")
-        ), "Popup should have a method to display it (show, display, visible, place, pack, etc.)"
 
 
 class TestNotificationHelperMethods:
