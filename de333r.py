@@ -165,7 +165,14 @@ class page:
 
 
 class notification:
-    pass
+    def __init__(
+        self,
+        parent,
+        text,
+        type="info",
+        duration=config["animation"].NOTIFICATION_DURATION,
+    ):
+        pass
 
 
 class popup:

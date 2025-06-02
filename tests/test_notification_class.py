@@ -33,7 +33,8 @@ def notification_instance(notification_class):
     """Create a notification instance for testing."""
     # This will likely fail initially since the class is empty
     try:
-        return notification_class("Test message", "info")
+        mock_parent = MagicMock()
+        return notification_class(mock_parent, "Test message", "info")
     except Exception:
         # If constructor doesn't work, we'll test that it should
         return None
@@ -72,7 +73,8 @@ class TestNotificationInstantiation:
     def test_notification_can_be_instantiated_with_text(self, notification_class):
         """Test that notification can be instantiated with text."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
             assert instance is not None, "notification should be instantiable with text"
         except TypeError as e:
             pytest.fail(f"notification class should accept text parameter: {e}")
@@ -82,7 +84,8 @@ class TestNotificationInstantiation:
     ):
         """Test that notification can be instantiated with text and type."""
         try:
-            instance = notification_class("Test message", "warning")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message", "warning")
             assert (
                 instance is not None
             ), "notification should be instantiable with text and type"
@@ -96,7 +99,7 @@ class TestNotificationInstantiation:
     ):
         """Test that notification can be instantiated with parent widget."""
         try:
-            instance = notification_class("Test message", "info", mock_parent)
+            instance = notification_class(mock_parent, "Test message", "info")
             assert (
                 instance is not None
             ), "notification should be instantiable with parent"
@@ -106,7 +109,8 @@ class TestNotificationInstantiation:
     def test_notification_stores_text_parameter(self, notification_class):
         """Test that notification stores the text parameter."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
             assert hasattr(instance, "text") or hasattr(
                 instance, "message"
             ), "notification should store text as 'text' or 'message' attribute"
@@ -125,7 +129,8 @@ class TestNotificationInstantiation:
     def test_notification_stores_type_parameter(self, notification_class):
         """Test that notification stores the type parameter."""
         try:
-            instance = notification_class("Test message", "warning")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message", "warning")
             assert hasattr(instance, "type") or hasattr(
                 instance, "notification_type"
             ), "notification should store type as 'type' or 'notification_type' attribute"
@@ -144,7 +149,8 @@ class TestNotificationInstantiation:
     def test_notification_has_default_type(self, notification_class):
         """Test that notification has a default type when none specified."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
             type_attr = getattr(
                 instance, "type", getattr(instance, "notification_type", None)
             )
@@ -163,7 +169,8 @@ class TestNotificationMethods:
     def test_notification_has_show_method(self, notification_class):
         """Test that notification has a show method."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
             assert hasattr(instance, "show"), "notification should have a 'show' method"
             assert callable(instance.show), "notification 'show' should be callable"
         except Exception as e:
@@ -172,7 +179,8 @@ class TestNotificationMethods:
     def test_notification_has_hide_or_dismiss_method(self, notification_class):
         """Test that notification has a hide or dismiss method."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
             has_hide = hasattr(instance, "hide") and callable(instance.hide)
             has_dismiss = hasattr(instance, "dismiss") and callable(instance.dismiss)
             has_close = hasattr(instance, "close") and callable(instance.close)
@@ -186,7 +194,8 @@ class TestNotificationMethods:
     def test_notification_show_method_works(self, notification_class):
         """Test that notification show method can be called."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
             if hasattr(instance, "show"):
                 # Should not raise an exception
                 instance.show()
@@ -196,7 +205,8 @@ class TestNotificationMethods:
     def test_notification_hide_method_works(self, notification_class):
         """Test that notification hide/dismiss method can be called."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
 
             if hasattr(instance, "hide"):
                 instance.hide()
@@ -212,7 +222,8 @@ class TestNotificationMethods:
     def test_notification_has_visible_property_or_method(self, notification_class):
         """Test that notification has a way to check visibility."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
             has_visible_property = hasattr(instance, "visible")
             has_is_visible_method = hasattr(instance, "is_visible") and callable(
                 instance.is_visible
@@ -236,7 +247,8 @@ class TestNotificationUIElements:
         with patch("tkinter.Frame") as mock_frame, patch("tkinter.Label") as mock_label:
 
             try:
-                instance = notification_class("Test message")
+                mock_parent = MagicMock()
+                instance = notification_class(mock_parent, "Test message")
 
                 # Should create some UI elements
                 ui_created = mock_frame.called or mock_label.called
@@ -249,7 +261,8 @@ class TestNotificationUIElements:
     def test_notification_has_frame_or_widget_attribute(self, notification_class):
         """Test that notification has a frame or widget attribute."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
 
             has_frame = hasattr(instance, "frame")
             has_widget = hasattr(instance, "widget")
@@ -267,7 +280,8 @@ class TestNotificationUIElements:
     ):
         """Test that notification UI elements can be positioned."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
 
             # Get the main UI element
             ui_element = getattr(
@@ -301,7 +315,10 @@ class TestNotificationTypes:
 
         for notification_type in types_to_test:
             try:
-                instance = notification_class("Test message", notification_type)
+                mock_parent = MagicMock()
+                instance = notification_class(
+                    mock_parent, "Test message", notification_type
+                )
                 assert (
                     instance is not None
                 ), f"notification should accept '{notification_type}' type"
@@ -315,9 +332,10 @@ class TestNotificationTypes:
     ):
         """Test that different notification types have different visual styles."""
         try:
-            info_notification = notification_class("Info", "info")
-            warning_notification = notification_class("Warning", "warning")
-            error_notification = notification_class("Error", "error")
+            mock_parent = MagicMock()
+            info_notification = notification_class(mock_parent, "Info", "info")
+            warning_notification = notification_class(mock_parent, "Warning", "warning")
+            error_notification = notification_class(mock_parent, "Error", "error")
 
             # Should have different styling (this is a behavioral expectation)
             # We can't test visual differences directly, but we can test that the system
@@ -355,7 +373,8 @@ class TestNotificationTypes:
     def test_notification_invalid_type_handling(self, notification_class):
         """Test that notification handles invalid types gracefully."""
         try:
-            instance = notification_class("Test message", "invalid_type")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message", "invalid_type")
             # Should either accept it or default to a valid type
             assert (
                 instance is not None
@@ -386,7 +405,8 @@ class TestNotificationEdgeCases:
     def test_notification_with_empty_text(self, notification_class):
         """Test notification with empty text."""
         try:
-            instance = notification_class("")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "")
             assert instance is not None, "notification should handle empty text"
         except Exception as e:
             pytest.fail(f"notification should handle empty text: {e}")
@@ -394,7 +414,8 @@ class TestNotificationEdgeCases:
     def test_notification_with_none_text(self, notification_class):
         """Test notification with None text."""
         try:
-            instance = notification_class(None)
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, None)
             assert instance is not None, "notification should handle None text"
         except Exception as e:
             pytest.fail(f"notification should handle None text: {e}")
@@ -403,7 +424,8 @@ class TestNotificationEdgeCases:
         """Test notification with very long text."""
         long_text = "A" * 1000  # 1000 character string
         try:
-            instance = notification_class(long_text)
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, long_text)
             assert instance is not None, "notification should handle long text"
         except Exception as e:
             pytest.fail(f"notification should handle long text: {e}")
@@ -412,7 +434,8 @@ class TestNotificationEdgeCases:
         """Test notification with unicode text."""
         unicode_text = "Unicode test: 🚀 ✅ ⚠️ ❌ 中文 العربية"
         try:
-            instance = notification_class(unicode_text)
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, unicode_text)
             assert instance is not None, "notification should handle unicode text"
         except Exception as e:
             pytest.fail(f"notification should handle unicode text: {e}")
@@ -421,7 +444,8 @@ class TestNotificationEdgeCases:
         """Test notification with special characters."""
         special_text = "Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?"
         try:
-            instance = notification_class(special_text)
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, special_text)
             assert instance is not None, "notification should handle special characters"
         except Exception as e:
             pytest.fail(f"notification should handle special characters: {e}")
@@ -430,7 +454,8 @@ class TestNotificationEdgeCases:
         """Test notification with multiline text."""
         multiline_text = "Line 1\nLine 2\nLine 3"
         try:
-            instance = notification_class(multiline_text)
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, multiline_text)
             assert instance is not None, "notification should handle multiline text"
         except Exception as e:
             pytest.fail(f"notification should handle multiline text: {e}")
@@ -442,7 +467,8 @@ class TestNotificationBehavior:
     def test_notification_can_be_shown_and_hidden(self, notification_class):
         """Test that notification can be shown and hidden."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
 
             # Should be able to show
             if hasattr(instance, "show"):
@@ -462,7 +488,8 @@ class TestNotificationBehavior:
     def test_notification_visibility_state_tracking(self, notification_class):
         """Test that notification tracks its visibility state."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
 
             # Check if it has visibility tracking
             if hasattr(instance, "visible"):
@@ -497,7 +524,8 @@ class TestNotificationBehavior:
     def test_notification_supports_auto_dismiss(self, notification_class):
         """Test that notification supports auto-dismiss functionality."""
         try:
-            instance = notification_class("Test message")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Test message")
 
             # Should have some auto-dismiss capability
             has_timeout = hasattr(instance, "timeout")
@@ -523,8 +551,9 @@ class TestNotificationIntegration:
         """Test that multiple notifications can be created."""
         try:
             notifications = []
+            mock_parent = MagicMock()
             for i in range(5):
-                instance = notification_class(f"Message {i}", "info")
+                instance = notification_class(mock_parent, f"Message {i}", "info")
                 notifications.append(instance)
 
             assert (
@@ -546,7 +575,8 @@ class TestNotificationIntegration:
             start_time = time.time()
 
             # Create a notification
-            instance = notification_class("Performance test")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Performance test")
 
             elapsed_time = time.time() - start_time
 
@@ -561,7 +591,8 @@ class TestNotificationIntegration:
     def test_notification_memory_cleanup(self, notification_class):
         """Test that notification can be properly cleaned up."""
         try:
-            instance = notification_class("Cleanup test")
+            mock_parent = MagicMock()
+            instance = notification_class(mock_parent, "Cleanup test")
 
             # Should have some way to clean up resources
             has_destroy = hasattr(instance, "destroy") and callable(instance.destroy)

@@ -88,7 +88,7 @@ class TestCreateNotification:
         """Test that create_notification creates a UI element."""
         with patch("tkinter.Frame") as mock_frame_class, patch(
             "tkinter.Label"
-        ) as mock_label_class:
+        ) as mock_label_class, patch.object(page_instance, "root") as mock_root:
 
             result = page_instance.create_notification("Test notification")
 
@@ -221,7 +221,11 @@ class TestCreatePopup:
         """Test that create_popup creates UI elements."""
         with patch("tkinter.Frame") as mock_frame_class, patch(
             "tkinter.Label"
-        ) as mock_label_class, patch("tkinter.Button") as mock_button_class:
+        ) as mock_label_class, patch(
+            "tkinter.Button"
+        ) as mock_button_class, patch.object(
+            page_instance, "root"
+        ) as mock_root:
 
             mock_content = MagicMock()
             result = page_instance.create_popup("Test Title", mock_content)
